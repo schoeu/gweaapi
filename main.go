@@ -60,7 +60,11 @@ func main() {
 	result := rs{}
 
 	dec := mahonia.NewDecoder("GB18030")
-	_, cdate, _ := dec.Translate(body, true)
+	_, cdate, transErr := dec.Translate(body, true)
+
+	if transErr != nil {
+		cdate = body
+	}
 
 	json.Unmarshal(cdate, &result)
 
