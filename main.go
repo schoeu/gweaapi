@@ -8,11 +8,12 @@ import (
 	"github.com/json-iterator/go"
 	"io/ioutil"
 	"net/http"
+	"net/url"
+	"strings"
 )
 
 type rs struct {
-	Status string     `json:"status"`
-	Data   []dataStru `json:"data"`
+	Data []dataStru `json:"data"`
 }
 
 type dataStru struct {
@@ -44,11 +45,41 @@ type observeStru struct {
 	WindPowerNum     string `json:"wind_power_num"`
 }
 
+var (
+	json = jsoniter.ConfigCompatibleWithStandardLibrary
+)
+
 func main() {
 	gin.SetMode(gin.ReleaseMode)
 
-	var json = jsoniter.ConfigCompatibleWithStandardLibrary
-	res, err := http.Get(config.WeatherUrl)
+	app := gin.Default()
+	app.GET("/", func(c *gin.Context) {
+		c.String(http.StatusOK, "Server is ok.")
+	})
+
+	apis := app.Group("/apis")
+
+	apis.GET("/weather/:city", func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		city := c.Param("city")
+		rs := getJsonData(city)
+
+		c.JSON(200, gin.H{
+			"status": 0,
+			"city":   city,
+			"data":   rs,
+		})
+	})
+
+	app.Run(config.Port)
+}
+
+func getJsonData(city string) rs {
+	city = url.QueryEscape(city + config.Suffix)
+	fmt.Println(city)
+	wUrl := strings.Replace(config.WeatherUrl, "${city}", city, -1)
+
+	res, err := http.Get(wUrl)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -67,24 +98,5 @@ func main() {
 	}
 
 	json.Unmarshal(cdate, &result)
-
-	app := gin.Default()
-	app.GET("/", func(c *gin.Context) {
-		c.String(http.StatusOK, "Server is ok.")
-	})
-
-	apis := app.Group("/apis")
-
-	apis.GET("/weather/:city", func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		city := c.Param("city")
-
-		c.JSON(200, gin.H{
-			"status": "1",
-			"city":   city,
-			"data":   result,
-		})
-	})
-
-	app.Run(config.Port)
+	return result
 }
