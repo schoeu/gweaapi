@@ -73,7 +73,7 @@ func main() {
 		c.String(http.StatusOK, "Server is ok.")
 	})
 
-	apis := app.Group("/api")
+	apis := app.Group("/apis")
 
 	apis.GET("/weather/:city", func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
