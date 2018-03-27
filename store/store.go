@@ -15,7 +15,10 @@ func GetRedis() {
 		DB:       config.DB,
 	})
 
-	pong, err := client.Ping().Result()
+	_, err := client.Ping().Result()
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 func SetData(k string, v string) {
