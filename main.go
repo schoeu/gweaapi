@@ -71,6 +71,15 @@ func main() {
 		})
 	})
 
+	apis.POST("/feedback", func(c *gin.Context) {
+		fb := c.PostForm("feedback")
+		fmt.Println(fb);
+		c.JSON(200, gin.H{
+			"status": 0,
+			"data":   fb,
+		})
+	})
+
 	app.Run(config.Port)
 }
 
