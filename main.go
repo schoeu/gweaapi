@@ -80,6 +80,9 @@ func main() {
 		if fb != "" {
 			key := strings.Join(strings.Split(time.Now().String(), " ")[:2], "-")
 			err := redisClient.Set(key, fb, 0).Err()
+			if err != nil {
+				fmt.Println(err)
+			}
 		}
 		c.JSON(200, gin.H{
 			"status": 0,
