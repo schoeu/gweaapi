@@ -2,6 +2,7 @@ package main
 
 import (
 	"./config"
+	"./store"
 	"fmt"
 	"github.com/axgle/mahonia"
 	"github.com/gin-gonic/gin"
@@ -10,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 type rs struct {
@@ -73,14 +75,18 @@ func main() {
 
 	apis.POST("/feedback", func(c *gin.Context) {
 		fb := c.PostForm("feedback")
-		fmt.Println(fb);
+		if fb != "" {
+			store.SetData(strings.Join(strings.Split(time.Now().String(), " ")[:2], "-"), fb)
+		}
 		c.JSON(200, gin.H{
 			"status": 0,
-			"data":   fb,
+			"data":   "ok",
 		})
 	})
 
 	app.Run(config.Port)
+
+	store.GetRedis()
 }
 
 func getJsonData(city string) rs {
