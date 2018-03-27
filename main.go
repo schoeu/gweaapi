@@ -59,6 +59,8 @@ func main() {
 		c.String(http.StatusOK, "Server is ok.")
 	})
 
+	redisClient := store.GetRedis()
+
 	apis := app.Group("/apis")
 
 	apis.GET("/weather/:city", func(c *gin.Context) {
@@ -76,7 +78,8 @@ func main() {
 	apis.POST("/feedback", func(c *gin.Context) {
 		fb := c.PostForm("feedback")
 		if fb != "" {
-			store.SetData(strings.Join(strings.Split(time.Now().String(), " ")[:2], "-"), fb)
+			key := strings.Join(strings.Split(time.Now().String(), " ")[:2], "-")
+			err := redisClient.Set(key, fb, 0).Err()
 		}
 		c.JSON(200, gin.H{
 			"status": 0,
@@ -85,8 +88,6 @@ func main() {
 	})
 
 	app.Run(config.Port)
-
-	store.GetRedis()
 }
 
 func getJsonData(city string) rs {
