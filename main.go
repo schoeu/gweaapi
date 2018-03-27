@@ -61,9 +61,9 @@ func main() {
 		c.String(http.StatusOK, "Server is ok.")
 	})
 
-	redisClient := store.GetRedis()
+	store.GetRedis()
 
-	apis := app.Group("/apis")
+	apis := app.Group("/api")
 
 	apis.GET("/weather/:city", func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
@@ -81,14 +81,19 @@ func main() {
 		fb := c.PostForm("feedback")
 		if fb != "" {
 			key := strings.Join(strings.Split(time.Now().String(), " ")[:2], "-")
-			err := redisClient.Set(key, fb, 0).Err()
-			if err != nil {
-				fmt.Println(err)
-			}
+			store.SetData(key, fb)
 		}
 		c.JSON(200, gin.H{
 			"status": 0,
 			"data":   "ok",
+		})
+	})
+
+	apis.GET("/citylist", func(c *gin.Context) {
+		citys := store.GetData("citylist")
+		c.JSON(200, gin.H{
+			"status": 0,
+			"data":   citys,
 		})
 	})
 
