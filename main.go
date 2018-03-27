@@ -28,6 +28,8 @@ type dataStru struct {
 
 type forecastStru struct {
 	Date               string `json:"date"`
+	SunriseTime        string `json:"sunriseTime"`
+	SunsetTime         string `json:"sunsetTime"`
 	TemperatureDay     string `json:"temperature_day"`
 	TemperatureNight   string `json:"temperature_night"`
 	WeatherDay         string `json:"weather_day"`
