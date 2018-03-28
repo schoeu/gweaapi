@@ -49,6 +49,16 @@ type observeStru struct {
 	WindPowerNum     string `json:"wind_power_num"`
 }
 
+type cityrs struct {
+	Data []cityinfo `json:"data"`
+}
+
+type cityinfo struct {
+	k int      `json:"k"`
+	n string   `json:"n"`
+	s []string `json:"s"`
+}
+
 var (
 	json = jsoniter.ConfigCompatibleWithStandardLibrary
 )
@@ -64,6 +74,7 @@ func main() {
 
 	store.GetRedis()
 	result := rs{}
+	cityr := cityrs{}
 	apis := app.Group("/api")
 	apis.GET("/weather/:city", func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
@@ -110,6 +121,10 @@ func main() {
 
 	apis.GET("/citylist", func(c *gin.Context) {
 		citys := store.GetData("citylist")
+		err := json.Unmarshal([]byte(citys.(string)), &cityr)
+		if err != nil {
+			fmt.Println("error:", err)
+		}
 		c.JSON(200, gin.H{
 			"status": 0,
 			"data":   citys,
