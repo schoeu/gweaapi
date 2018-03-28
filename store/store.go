@@ -4,6 +4,7 @@ import (
 	"../config"
 	"fmt"
 	"github.com/go-redis/redis"
+	"time"
 )
 
 var c *redis.Client
@@ -23,7 +24,7 @@ func GetRedis() {
 	fmt.Println(c)
 }
 
-func GetData(key string) string {
+func GetData(key string) interface{} {
 	val, err := c.Get(key).Result()
 	if err != nil {
 		fmt.Println(err)
@@ -31,8 +32,8 @@ func GetData(key string) string {
 	return val
 }
 
-func SetData(key string, val string) {
-	err := c.Set(key, val, 0).Err()
+func SetData(key string, val interface{}, dur time.Duration) {
+	err := c.Set(key, val, dur).Err()
 	fmt.Println(c)
 	if err != nil {
 		fmt.Println(err)

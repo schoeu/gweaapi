@@ -54,6 +54,7 @@ var (
 )
 
 func main() {
+	during := time.Minute * 30
 	gin.SetMode(gin.ReleaseMode)
 
 	app := gin.Default()
@@ -64,24 +65,38 @@ func main() {
 	store.GetRedis()
 
 	apis := app.Group("/api")
-
 	apis.GET("/weather/:city", func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		city := c.Param("city")
-		rs := getJsonData(city)
 
-		c.JSON(200, gin.H{
-			"status": 0,
-			"city":   city,
-			"data":   rs,
-		})
+		cityTemp := store.GetData(city)
+		if cityTemp != "" {
+			c.JSON(200, gin.H{
+				"status": 0,
+				"city":   city,
+				"data":   cityTemp,
+				"from":   "cache",
+			})
+		} else {
+			rs := getJsonData(city)
+			b, err := json.Marshal(rs)
+			if err != nil {
+				fmt.Println("error:", err)
+			}
+			store.SetData(city, b, during)
+			c.JSON(200, gin.H{
+				"status": 0,
+				"city":   city,
+				"data":   rs,
+			})
+		}
 	})
 
 	apis.POST("/feedback", func(c *gin.Context) {
 		fb := c.PostForm("feedback")
 		if fb != "" {
 			key := strings.Join(strings.Split(time.Now().String(), " ")[:2], "-")
-			store.SetData(key, fb)
+			store.SetData(key, fb, 0)
 		}
 		c.JSON(200, gin.H{
 			"status": 0,
