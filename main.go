@@ -63,19 +63,18 @@ func main() {
 	})
 
 	store.GetRedis()
-	//result := rs{}
+	result := rs{}
 	apis := app.Group("/api")
 	apis.GET("/weather/:city", func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		city := c.Param("city")
 
 		cityTemp := store.GetData(city)
-		fmt.Println(cityTemp.(string))
 		if cityTemp != "" {
-			// err := json.Unmarshal([]byte(cityTemp), &result)
-			// if err != nil {
-			// 	fmt.Println("error:", err)
-			// }
+			err := json.Unmarshal([]byte(cityTemp.(string)), &result)
+			if err != nil {
+				fmt.Println("error:", err)
+			}
 			c.JSON(200, gin.H{
 				"status": 0,
 				"city":   city,
