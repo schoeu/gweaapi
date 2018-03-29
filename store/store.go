@@ -2,7 +2,7 @@ package store
 
 import (
 	"../config"
-	"fmt"
+	"../utils"
 	"github.com/go-redis/redis"
 	"time"
 )
@@ -17,25 +17,17 @@ func GetRedis() {
 	})
 
 	_, err := client.Ping().Result()
-	if err != nil {
-		fmt.Println(err)
-	}
+	utils.ErrHandle(err)
 	c = client
-	fmt.Println(c)
 }
 
 func GetData(key string) interface{} {
 	val, err := c.Get(key).Result()
-	if err != nil {
-		fmt.Println(err)
-	}
+	utils.ErrHandle(err)
 	return val
 }
 
 func SetData(key string, val interface{}, dur time.Duration) {
 	err := c.Set(key, val, dur).Err()
-	fmt.Println(c)
-	if err != nil {
-		fmt.Println(err)
-	}
+	utils.ErrHandle(err)
 }

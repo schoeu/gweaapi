@@ -3,7 +3,7 @@ package main
 import (
 	"./config"
 	"./store"
-	"fmt"
+	"./utils"
 	"github.com/axgle/mahonia"
 	"github.com/gin-gonic/gin"
 	"github.com/json-iterator/go"
@@ -83,9 +83,8 @@ func main() {
 		cityTemp := store.GetData(city)
 		if cityTemp != "" {
 			err := json.Unmarshal([]byte(cityTemp.(string)), &result)
-			if err != nil {
-				fmt.Println("error:", err)
-			}
+			utils.ErrHandle(err)
+
 			c.JSON(200, gin.H{
 				"status": 0,
 				"city":   city,
@@ -95,9 +94,8 @@ func main() {
 		} else {
 			rs := getJsonData(city)
 			b, err := json.Marshal(rs)
-			if err != nil {
-				fmt.Println("error:", err)
-			}
+			utils.ErrHandle(err)
+
 			store.SetData(city, b, during)
 			c.JSON(200, gin.H{
 				"status": 0,
@@ -119,19 +117,25 @@ func main() {
 		})
 	})
 
-	apis.GET("/search/:key", func(c *gin.Context) {
-		key := c.Param("key")
-		
+	apis.GET("/search", func(c *gin.Context) {
+		key := c.Query("key")
+
 		citys := store.GetData("citylist")
 		err := json.Unmarshal([]byte(citys.(string)), &cityr)
-		if err != nil {
-			fmt.Println("error:", err)
+		utils.ErrHandle(err)
+
+		if key == "" {
+			c.JSON(200, gin.H{
+				"status": 0,
+				"data":   cityr,
+			})
+		} else {
+			matchArr := searchText(key, cityr)
+			c.JSON(200, gin.H{
+				"status": 0,
+				"data":   matchArr,
+			})
 		}
-		c.JSON(200, gin.H{
-			"key": key,
-			"status": 0,
-			"data":   cityr,
-		})
 	})
 
 	app.Run(config.Port)
@@ -139,20 +143,16 @@ func main() {
 
 func getJsonData(city string) rs {
 	city = url.QueryEscape(city + config.Suffix)
-	fmt.Println(city)
 	wUrl := strings.Replace(config.WeatherUrl, "${city}", city, -1)
 
 	res, err := http.Get(wUrl)
-	if err != nil {
-		fmt.Println(err)
-	}
+	utils.ErrHandle(err)
+
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		fmt.Println(err)
-	}
-	result := rs{}
+	utils.ErrHandle(err)
 
+	result := rs{}
 	dec := mahonia.NewDecoder("GB18030")
 	_, cdate, transErr := dec.Translate(body, true)
 
@@ -162,4 +162,30 @@ func getJsonData(city string) rs {
 
 	json.Unmarshal(cdate, &result)
 	return result
+}
+
+type rsType []string
+
+func searchText(key string, data cityrs) []rsType {
+	d := data.Data
+	var rs []rsType
+	for _, v := range d {
+		var rsInfo rsType
+		n := v.N
+		s := v.S
+		var name = n
+		if strings.Contains(n, key) {
+			rsInfo = append(rsInfo, name)
+		}
+		for _, val := range s {
+			if strings.Contains(val, key) {
+				rsInfo = append(rsInfo, name, val)
+			}
+			if len(rsInfo) > 0 {
+				rs = append(rs, rsInfo)
+				rsInfo = rsInfo[:0]
+			}
+		}
+	}
+	return rs
 }
