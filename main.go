@@ -4,6 +4,7 @@ import (
 	"./config"
 	"./store"
 	"./utils"
+	"fmt"
 	"github.com/axgle/mahonia"
 	"github.com/gin-gonic/gin"
 	"github.com/json-iterator/go"
@@ -58,6 +59,8 @@ type cityinfo struct {
 	N string   `json:"n"`
 	S []string `json:"s"`
 }
+
+type rsType []string
 
 var (
 	json = jsoniter.ConfigCompatibleWithStandardLibrary
@@ -164,8 +167,6 @@ func getJsonData(city string) rs {
 	return result
 }
 
-type rsType []string
-
 func searchText(key string, data cityrs) []rsType {
 	d := data.Data
 	var rs []rsType
@@ -183,7 +184,7 @@ func searchText(key string, data cityrs) []rsType {
 			}
 			if len(rsInfo) > 0 {
 				rs = append(rs, rsInfo)
-				rsInfo = rsInfo[:0]
+				rsInfo = rsType{}
 			}
 		}
 	}
