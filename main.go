@@ -4,7 +4,6 @@ import (
 	"./config"
 	"./store"
 	"./utils"
-	"fmt"
 	"github.com/axgle/mahonia"
 	"github.com/gin-gonic/gin"
 	"github.com/json-iterator/go"
@@ -174,13 +173,12 @@ func searchText(key string, data cityrs) []rsType {
 		var rsInfo rsType
 		n := v.N
 		s := v.S
-		var name = n
 		if strings.Contains(n, key) {
-			rsInfo = append(rsInfo, name)
+			rsInfo = append(rsInfo, n)
 		}
 		for _, val := range s {
 			if strings.Contains(val, key) {
-				rsInfo = append(rsInfo, name, val)
+				rsInfo = append(rsInfo, n, val)
 			}
 			if len(rsInfo) > 0 {
 				rs = append(rs, rsInfo)
