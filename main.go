@@ -54,9 +54,9 @@ type cityrs struct {
 }
 
 type cityinfo struct {
-	k int      `json:"k"`
-	n string   `json:"n"`
-	s []string `json:"s"`
+	K int      `json:"k"`
+	N string   `json:"n"`
+	S []string `json:"s"`
 }
 
 var (
@@ -119,15 +119,18 @@ func main() {
 		})
 	})
 
-	apis.GET("/citylist", func(c *gin.Context) {
+	apis.GET("/search/:key", func(c *gin.Context) {
+		key := c.Param("key")
+		
 		citys := store.GetData("citylist")
 		err := json.Unmarshal([]byte(citys.(string)), &cityr)
 		if err != nil {
 			fmt.Println("error:", err)
 		}
 		c.JSON(200, gin.H{
+			"key": key,
 			"status": 0,
-			"data":   citys,
+			"data":   cityr,
 		})
 	})
 
