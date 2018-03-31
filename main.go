@@ -75,6 +75,10 @@ func main() {
 	})
 
 	store.GetRedis()
+
+	db := utils.OpenDb("mysql", config.MysqlUrl)
+	defer db.Close()
+
 	result := rs{}
 	cityr := cityrs{}
 	apis := app.Group("/api")
@@ -109,10 +113,12 @@ func main() {
 
 	apis.POST("/feedback", func(c *gin.Context) {
 		fb := c.PostForm("feedback")
+		username := c.Query("username")
 		if fb != "" {
-			key := strings.Join(strings.Split(time.Now().String(), " ")[:2], "-")
-			store.SetData(key, fb, 0)
+			_, err := db.Exec(`insert into userinfo (username, comments) values (?, ?)`, username, fb)
+			utils.ErrHandle(err)
 		}
+
 		c.JSON(200, gin.H{
 			"status": 0,
 			"data":   "ok",
