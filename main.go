@@ -159,6 +159,30 @@ func main() {
 		})
 	})
 
+	apis.GET("/getcity", func(c *gin.Context) {
+		username := c.Query("username")
+		var citys string
+		if username != "" {
+			rows, err := db.Query(`select citylist from cityinfo where username = ?`, username)
+			utils.ErrHandle(err)
+			for rows.Next() {
+				err := rows.Scan(&citys)
+				utils.ErrHandle(err)
+			}
+			err = rows.Err()
+			utils.ErrHandle(err)
+			defer rows.Close()
+			c.JSON(200, gin.H{
+				"status": 0,
+				"data":   strings.Split(citys, ","),
+			})
+		}
+		c.JSON(200, gin.H{
+			"status": 1,
+			"data":   "no data.",
+		})
+	})
+
 	app.Run(config.Port)
 }
 
