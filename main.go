@@ -19,6 +19,7 @@ type rs struct {
 }
 
 type dataStru struct {
+	City       string `json:"city"`
 	Pm25       string `json:"ps_pm25"`
 	Forecast6d struct {
 		Info []forecastStru `json:"info"`
@@ -86,15 +87,19 @@ func main() {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		city := c.Param("city")
 
+		if strings.Contains(city, ",") {
+			citys := strings.Split(city, ",")
+		}
+
 		cityTemp := store.GetData(city)
-		if cityTemp != "" {
+		if cityTemp == "" {
 			err := json.Unmarshal([]byte(cityTemp.(string)), &result)
 			utils.ErrHandle(err)
 
 			c.JSON(200, gin.H{
 				"status": 0,
 				"city":   city,
-				"data":   cityTemp,
+				"data":   result,
 				"from":   "cache",
 			})
 		} else {
@@ -105,7 +110,6 @@ func main() {
 			store.SetData(city, b, during)
 			c.JSON(200, gin.H{
 				"status": 0,
-				"city":   city,
 				"data":   rs,
 			})
 		}
@@ -144,6 +148,19 @@ func main() {
 				"data":   matchArr,
 			})
 		}
+	})
+
+	apis.GET("/addcity", func(c *gin.Context) {
+		username := c.Query("username")
+		citys := c.Query("citys")
+		if citys != "" {
+			_, err := db.Exec(`insert into cityinfo (username, citylist) values (?, ?)`, username, citys)
+			utils.ErrHandle(err)
+		}
+		c.JSON(200, gin.H{
+			"status": 0,
+			"data":   "ok",
+		})
 	})
 
 	app.Run(config.Port)
