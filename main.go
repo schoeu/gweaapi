@@ -106,6 +106,7 @@ func main() {
 			store.SetData(city, b, during)
 			c.JSON(200, gin.H{
 				"status": 0,
+				"city":   city,
 				"data":   rs,
 			})
 		}
