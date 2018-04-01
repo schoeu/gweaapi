@@ -87,10 +87,6 @@ func main() {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		city := c.Param("city")
 
-		if strings.Contains(city, ",") {
-			citys := strings.Split(city, ",")
-		}
-
 		cityTemp := store.GetData(city)
 		if cityTemp == "" {
 			err := json.Unmarshal([]byte(cityTemp.(string)), &result)
