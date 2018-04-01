@@ -176,11 +176,12 @@ func main() {
 				"status": 0,
 				"data":   strings.Split(citys, ","),
 			})
+		} else {
+			c.JSON(200, gin.H{
+				"status": 1,
+				"data":   "no data.",
+			})
 		}
-		c.JSON(200, gin.H{
-			"status": 1,
-			"data":   "no data.",
-		})
 	})
 
 	app.Run(config.Port)
