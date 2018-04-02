@@ -88,7 +88,7 @@ func main() {
 		city := c.Param("city")
 
 		cityTemp := store.GetData(city)
-		if cityTemp == "" {
+		if cityTemp == nil {
 			err := json.Unmarshal([]byte(cityTemp.(string)), &result)
 			utils.ErrHandle(err)
 
