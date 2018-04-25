@@ -150,20 +150,14 @@ func main() {
 	apis.GET("/addcity", func(c *gin.Context) {
 		username := c.Query("username")
 		citys := c.Query("citys")
-		hasUser := false
+		var name string
 		if username != "" {
-			rows, err := db.Query(`select username from cityinfo`)
+			err := db.QueryRow(`select username from cityinfo`).Scan(&name)
 			utils.ErrHandle(err)
-			for rows.Next() {
-				hasUser = true
-			}
-			err = rows.Err()
-			utils.ErrHandle(err)
-			defer rows.Close()
 		}
 
 		if citys != "" {
-			if hasUser {
+			if name != "" {
 				_, err := db.Exec(`update weathers.cityinfo set citylist = ? where username = ?`, citys, username)
 				utils.ErrHandle(err)
 			} else {
