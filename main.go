@@ -4,6 +4,7 @@ import (
 	"./config"
 	"./store"
 	"./utils"
+	"fmt"
 	"github.com/axgle/mahonia"
 	"github.com/gin-gonic/gin"
 	"github.com/json-iterator/go"
@@ -152,15 +153,17 @@ func main() {
 		citys := c.Query("citys")
 		var name string
 		if username != "" {
-			err := db.QueryRow(`select username from cityinfo`).Scan(&name)
+			err := db.QueryRow(`select citylist from cityinfo where username = ?`, username).Scan(&name)
 			utils.ErrHandle(err)
 		}
-
 		if citys != "" {
+			fmt.Println("name", name)
 			if name != "" {
+				fmt.Println("update", username, citys)
 				_, err := db.Exec(`update weathers.cityinfo set citylist = ? where username = ?`, citys, username)
 				utils.ErrHandle(err)
 			} else {
+				fmt.Println("insert", username, citys)
 				_, err := db.Exec(`insert into cityinfo (username, citylist) values (?, ?)`, username, citys)
 				utils.ErrHandle(err)
 			}
