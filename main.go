@@ -150,9 +150,26 @@ func main() {
 	apis.GET("/addcity", func(c *gin.Context) {
 		username := c.Query("username")
 		citys := c.Query("citys")
-		if citys != "" {
-			_, err := db.Exec(`insert into cityinfo (username, citylist) values (?, ?)`, username, citys)
+		hasUser := false
+		if username != "" {
+			rows, err := db.Query(`select username from cityinfo`)
 			utils.ErrHandle(err)
+			for rows.Next() {
+				hasUser = true
+			}
+			err = rows.Err()
+			utils.ErrHandle(err)
+			defer rows.Close()
+		}
+
+		if citys != "" {
+			if hasUser {
+				_, err := db.Exec(`update weathers.cityinfo set citylist = ? where username = ?`, citys, username)
+				utils.ErrHandle(err)
+			} else {
+				_, err := db.Exec(`insert into cityinfo (username, citylist) values (?, ?)`, username, citys)
+				utils.ErrHandle(err)
+			}
 		}
 		c.JSON(200, gin.H{
 			"status": 0,
