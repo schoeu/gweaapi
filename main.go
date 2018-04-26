@@ -88,28 +88,34 @@ func main() {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		city := c.Param("city")
 
-		cityTemp := store.GetData(city)
-		if cityTemp == nil {
-			err := json.Unmarshal([]byte(cityTemp.(string)), &result)
-			utils.ErrHandle(err)
+		// muti citys
+		mcity := strings.Split(city, ",")
+		if len(mcity) > 1 {
 
-			c.JSON(200, gin.H{
-				"status": 0,
-				"city":   city,
-				"data":   result,
-				"from":   "cache",
-			})
 		} else {
-			rs := getJsonData(city)
-			b, err := json.Marshal(rs)
-			utils.ErrHandle(err)
+			cityTemp := store.GetData(city)
+			if cityTemp == nil {
+				err := json.Unmarshal([]byte(cityTemp.(string)), &result)
+				utils.ErrHandle(err)
 
-			store.SetData(city, b, during)
-			c.JSON(200, gin.H{
-				"status": 0,
-				"city":   city,
-				"data":   rs,
-			})
+				c.JSON(200, gin.H{
+					"status": 0,
+					"city":   city,
+					"data":   result,
+					"from":   "cache",
+				})
+			} else {
+				rs := getJsonData(city)
+				b, err := json.Marshal(rs)
+				utils.ErrHandle(err)
+
+				store.SetData(city, b, during)
+				c.JSON(200, gin.H{
+					"status": 0,
+					"city":   city,
+					"data":   rs,
+				})
+			}
 		}
 	})
 
