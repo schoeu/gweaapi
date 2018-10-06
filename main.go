@@ -83,7 +83,7 @@ func main() {
 
 	result := rs{}
 	cityr := cityrs{}
-	apis := app.Group("/api")
+	apis := app.Group("/weather/api")
 	apis.GET("/weather/:city", func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		city := c.Param("city")
@@ -137,6 +137,11 @@ func main() {
 		key := c.Query("key")
 
 		citys := store.GetData("citylist")
+		if citys == "" {
+			citys = config.CityMap
+			store.SetData("citylist", citys, 0)
+		}
+
 		err := json.Unmarshal([]byte(citys.(string)), &cityr)
 		utils.ErrHandle(err)
 
