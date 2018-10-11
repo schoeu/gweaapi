@@ -67,6 +67,11 @@ var (
 	json = jsoniter.ConfigCompatibleWithStandardLibrary
 )
 
+type sessionBody struct {
+	Session string `json:"session_key"`
+	Openid  string `json:"openid"`
+}
+
 func main() {
 	during := time.Minute * 30
 	gin.SetMode(gin.ReleaseMode)
@@ -210,6 +215,15 @@ func main() {
 		}
 	})
 
+	apis.GET("/getopenid", func(c *gin.Context) {
+		code := c.Query("code")
+		openData := getOpenJSON(code)
+		c.JSON(200, gin.H{
+			"status": 0,
+			"data":   openData.Openid,
+		})
+	})
+
 	app.Run(config.Port)
 }
 
@@ -257,4 +271,19 @@ func searchText(key string, data cityrs) []rsType {
 		}
 	}
 	return rs
+}
+
+func getOpenJSON(code string) sessionBody {
+	rsUrl := strings.Replace(config.CodeUrl, "${jscode}", code, -1)
+	res, err := http.Get(rsUrl)
+	utils.ErrHandle(err)
+
+	s := sessionBody{}
+	body, err := ioutil.ReadAll(res.Body)
+
+	json.Unmarshal(body, &s)
+	res.Body.Close()
+	utils.ErrHandle(err)
+
+	return s
 }
