@@ -12,13 +12,16 @@ import (
 )
 
 func DeleteCars(n string) {
-	rsUrl := strings.Replace(config.DeleteCarUrl, "{name}", n)
+	rsUrl := strings.Replace(config.DeleteCarUrl, "{name}", n, -1)
 	req, err := http.NewRequest("DELETE", rsUrl, nil)
 	for k, v := range config.HeadersInfo{
 		req.Header.Add(k, v)
 	}
 
+	client := &http.Client{}
 	resp, err := client.Do(req)
+	utils.ErrHandle(err)
+
 	defer resp.Body.Close()
 	fmt.Println("delete car: ", n)
 }
@@ -37,10 +40,10 @@ type dataStruct struct {
 }
 
 type addStruct struct {
-	id string
+	Id int `json:"id"`
 }
 
-func AddCars(lpn, vin, esn string) string {
+func AddCars(lpn, vin, esn string) int {
 	ds := dataStruct{}
 	ds.Vin = lpn
 	ds.Lpn = vin
@@ -62,8 +65,13 @@ func AddCars(lpn, vin, esn string) string {
 	defer resp.Body.Close()
 
 	respBytes, err := ioutil.ReadAll(resp.Body)
+	utils.ErrHandle(err)
 
-	as := addStruct{}
+	as := addStruct{} 
+	err = json.Unmarshal(respBytes, &as)
+	utils.ErrHandle(err)
+	
+	fmt.Println(as, string(respBytes))
 
-	fmt.Println(string(respBytes))
+	return as.Id
 }

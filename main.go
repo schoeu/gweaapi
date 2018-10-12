@@ -6,6 +6,7 @@ import (
 	"./utils"
 	"./violation"
 	"fmt"
+	"strconv"
 	"github.com/axgle/mahonia"
 	"github.com/gin-gonic/gin"
 	"github.com/json-iterator/go"
@@ -230,12 +231,25 @@ func main() {
 		vin := c.DefaultQuery("vin", "")
 		esn := c.DefaultQuery("esn", "")
 		
-		fmt.Println(lpn, vin, esn)
-		violation.Get(lpn, vin, esn)
-		// c.JSON(200, gin.H{
-		// 	"status": 0,
-		// 	"data":   openData.Openid,
-		// })
+		carid := violation.AddCars(lpn, vin, esn)
+
+		if carid != 0 {
+			violation.DeleteCars(strconv.Itoa(carid))
+		}
+
+		c.JSON(200, gin.H{
+			"status": 0,
+			"data":   carid,
+		})
+	})
+
+	apis.GET("/deletecar", func(c *gin.Context) {
+		n := c.Query("n")
+		violation.DeleteCars(n)
+		c.JSON(200, gin.H{
+			"status": 0,
+			"data":   "done",
+		})
 	})
 
 	app.Run(config.Port)
