@@ -4,6 +4,7 @@ import (
 	"./config"
 	"./store"
 	"./utils"
+	"./violation"
 	"fmt"
 	"github.com/axgle/mahonia"
 	"github.com/gin-gonic/gin"
@@ -222,6 +223,19 @@ func main() {
 			"status": 0,
 			"data":   openData.Openid,
 		})
+	})
+
+	apis.GET("/violation", func(c *gin.Context) {
+		lpn := c.Query("lpn")
+		vin := c.DefaultQuery("vin", "")
+		esn := c.DefaultQuery("esn", "")
+		
+		fmt.Println(lpn, vin, esn)
+		violation.Get(lpn, vin, esn)
+		// c.JSON(200, gin.H{
+		// 	"status": 0,
+		// 	"data":   openData.Openid,
+		// })
 	})
 
 	app.Run(config.Port)
