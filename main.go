@@ -6,13 +6,13 @@ import (
 	"./utils"
 	"./violation"
 	"fmt"
-	"strconv"
 	"github.com/axgle/mahonia"
 	"github.com/gin-gonic/gin"
 	"github.com/json-iterator/go"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -229,11 +229,11 @@ func main() {
 		lpn := c.Query("lpn")
 		vin := c.DefaultQuery("vin", "")
 		esn := c.DefaultQuery("esn", "")
-		
+
 		carid := violation.AddCars(lpn, vin, esn)
 		carString := strconv.Itoa(carid)
 		fmt.Println(carString)
-		violation.GetCarsInfo(carString)
+		rs := violation.GetCarsInfo(carString)
 
 		if carid != 0 {
 			violation.DeleteCars(carString)
@@ -241,7 +241,7 @@ func main() {
 
 		c.JSON(200, gin.H{
 			"status": 0,
-			"data":   carid,
+			"data":   rs,
 		})
 	})
 

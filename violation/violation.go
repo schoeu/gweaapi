@@ -1,20 +1,54 @@
 package violation
 
 import (
-	"fmt"
-	"net/http"
-	"encoding/json"
-	"bytes"
-	"strings"
-	"io/ioutil"
-	"../utils"
 	"../config"
+	"../utils"
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"strings"
 )
+
+type dataStruct struct {
+	ModelId     string `json:"modelId"`
+	Vin         string `json:"vin"`
+	RootbrandId string `json:"rootbrandId"`
+	Lpn         string `json:"lpn"`
+	Esn         string `json:"esn"`
+	SubbrandId  string `json:"subbrandId"`
+}
+
+type addStruct struct {
+	Id int `json:"id"`
+}
+
+type vioDetail struct {
+	Lpn              string `json:"lpn"`
+	CityCode         int    `json:"cityCode"`
+	ViolationTime    int    `json:"violationTime"`
+	Address          string `json:"address"`
+	Behavior         string `json:"behavior"`
+	DeductPoints     int    `json:"deductPoints"`
+	FineNumber       int    `json:"fineNumber"`
+	CollectionAgency string `json:"collectionAgency"`
+	Code             string `json:"code"`
+	ProcessState     int    `json:"processState"`
+}
+
+type rs struct {
+	PointCount int         `json:"pointCount"`
+	Details    []vioDetail `json:"details"`
+	Lpn        string      `json:"lpn"`
+	ItemCount  int         `json:"itemCount"`
+	FineCount  int         `json:"fineCount"`
+}
 
 func DeleteCars(n string) {
 	rsUrl := strings.Replace(config.DeleteCarUrl, "{name}", n, -1)
 	req, err := http.NewRequest("DELETE", rsUrl, nil)
-	for k, v := range config.HeadersInfo{
+	for k, v := range config.HeadersInfo {
 		req.Header.Add(k, v)
 	}
 
@@ -26,10 +60,10 @@ func DeleteCars(n string) {
 	fmt.Println("delete car: ", n)
 }
 
-func GetCarsInfo(n string) {
+func GetCarsInfo(n string) rs {
 	rsUrl := strings.Replace(config.InfoUrl, "{num}", n, -1)
 	req, err := http.NewRequest("GET", rsUrl, nil)
-	for k, v := range config.HeadersInfo{
+	for k, v := range config.HeadersInfo {
 		req.Header.Add(k, v)
 	}
 
@@ -42,29 +76,23 @@ func GetCarsInfo(n string) {
 	respBytes, err := ioutil.ReadAll(resp.Body)
 	utils.ErrHandle(err)
 
-	fmt.Println("get car info: ", string(respBytes))
-}
+	r := rs{}
+	err = json.Unmarshal(respBytes, &r)
+	utils.ErrHandle(err)
 
-type dataStruct struct {
-	ModelId string `json:"modelId"`
-	Vin string `json:"vin"`
-	RootbrandId string `json:"rootbrandId"`
-	Lpn string `json:"lpn"`
-	Esn string `json:"esn"`
-	SubbrandId string `json:"subbrandId"`
-}
+	fmt.Println("get car info: ", r)
 
-type addStruct struct {
-	Id int `json:"id"`
+	return r
 }
 
 func AddCars(lpn, vin, esn string) int {
 	ds := dataStruct{}
-	ds.Vin = lpn
-	ds.Lpn = vin
+	ds.Vin = vin
+	ds.Lpn = lpn
 	ds.Esn = esn
 
 	jsonStr, err := json.Marshal(ds)
+	fmt.Println(string(jsonStr))
 	utils.ErrHandle(err)
 
 	reader := bytes.NewReader(jsonStr)
@@ -72,7 +100,7 @@ func AddCars(lpn, vin, esn string) int {
 	client := &http.Client{}
 
 	req, err := http.NewRequest("POST", config.AddCarUrl, reader)
-	for k, v := range config.HeadersInfo{
+	for k, v := range config.HeadersInfo {
 		req.Header.Add(k, v)
 	}
 	req.Header.Add("content-type", "application/json")
@@ -83,7 +111,7 @@ func AddCars(lpn, vin, esn string) int {
 	respBytes, err := ioutil.ReadAll(resp.Body)
 	utils.ErrHandle(err)
 
-	as := addStruct{} 
+	as := addStruct{}
 	err = json.Unmarshal(respBytes, &as)
 	utils.ErrHandle(err)
 	fmt.Println(string(respBytes))
