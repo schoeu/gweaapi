@@ -27,7 +27,22 @@ func DeleteCars(n string) {
 }
 
 func GetCarsInfo(n string) {
-	
+	rsUrl := strings.Replace(config.InfoUrl, "{num}", n, -1)
+	req, err := http.NewRequest("GET", rsUrl, nil)
+	for k, v := range config.HeadersInfo{
+		req.Header.Add(k, v)
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	utils.ErrHandle(err)
+
+	defer resp.Body.Close()
+
+	respBytes, err := ioutil.ReadAll(resp.Body)
+	utils.ErrHandle(err)
+
+	fmt.Println("get car info: ", string(respBytes))
 }
 
 type dataStruct struct {
@@ -60,6 +75,7 @@ func AddCars(lpn, vin, esn string) int {
 	for k, v := range config.HeadersInfo{
 		req.Header.Add(k, v)
 	}
+	req.Header.Add("content-type", "application/json")
 
 	resp, err := client.Do(req)
 	defer resp.Body.Close()
@@ -70,8 +86,6 @@ func AddCars(lpn, vin, esn string) int {
 	as := addStruct{} 
 	err = json.Unmarshal(respBytes, &as)
 	utils.ErrHandle(err)
-	
-	fmt.Println(as, string(respBytes))
-
+	fmt.Println(string(respBytes))
 	return as.Id
 }

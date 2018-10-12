@@ -175,7 +175,6 @@ func main() {
 			utils.ErrHandle(err)
 		}
 		if citys != "" {
-			fmt.Println("name", name)
 			if name != "" {
 				fmt.Println("update", username, citys)
 				_, err := db.Exec(`update weathers.cityinfo set citylist = ? where username = ?`, citys, username)
@@ -232,9 +231,12 @@ func main() {
 		esn := c.DefaultQuery("esn", "")
 		
 		carid := violation.AddCars(lpn, vin, esn)
+		carString := strconv.Itoa(carid)
+		fmt.Println(carString)
+		violation.GetCarsInfo(carString)
 
 		if carid != 0 {
-			violation.DeleteCars(strconv.Itoa(carid))
+			violation.DeleteCars(carString)
 		}
 
 		c.JSON(200, gin.H{
