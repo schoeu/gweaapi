@@ -188,8 +188,8 @@ func main() {
 		utils.ErrHandle(err)
 
 		jsonStr := string(b)
-
-		_, dbErr := db.Exec(`INSERT INTO services(user_id, violation, violation_info) VALUES(?, 1, ?) ON DUPLICATE KEY UPDATE violation_info=?`, uid, jsonStr, jsonStr)
+		// INSERT INTO services (user_id, violation, violation_info) VALUES ('122', '1', '{"a":1}') ON DUPLICATE KEY UPDATE violation_info= '{"a":3}
+		_, dbErr := db.Exec(`INSERT INTO services (user_id, violation, violation_info) VALUES (?, 1, ?) ON DUPLICATE KEY UPDATE violation_info= ?`, uid, jsonStr, jsonStr)
 		utils.ErrHandle(dbErr)
 
 		c.JSON(200, gin.H{
