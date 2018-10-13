@@ -189,7 +189,7 @@ func main() {
 
 		jsonStr := string(b)
 		// INSERT INTO services (user_id, violation, violation_info) VALUES ('122', '1', '{"a":1}') ON DUPLICATE KEY UPDATE violation_info= '{"a":3}
-		_, dbErr := db.Exec(`INSERT INTO services (user_id, violation, violation_info) VALUES (?, 1, ?) ON DUPLICATE KEY UPDATE violation_info= ?`, uid, jsonStr, jsonStr)
+		_, dbErr := db.Exec(`INSERT INTO services (openid, violation, vioinfo) VALUES (?, 1, ?) ON DUPLICATE KEY UPDATE vioinfo= ?`, uid, jsonStr, jsonStr)
 		utils.ErrHandle(dbErr)
 
 		c.JSON(200, gin.H{
@@ -204,6 +204,27 @@ func main() {
 		c.JSON(200, gin.H{
 			"status": 0,
 			"data":   "done",
+		})
+	})
+
+	apis.GET("/vioinfo", func(c *gin.Context) {
+		uid := c.DefaultQuery("uid", "")
+		var info string
+		if uid != "" {
+			rows, err := db.Query(`select vioinfo from services where openid = ?`, uid)
+			utils.ErrHandle(err)
+			for rows.Next() {
+				err := rows.Scan(&info)
+				utils.ErrHandle(err)
+			}
+			err = rows.Err()
+			utils.ErrHandle(err)
+			defer rows.Close()
+			fmt.Println(info)
+		}
+		c.JSON(200, gin.H{
+			"status": 0,
+			"data":   info,
 		})
 	})
 
