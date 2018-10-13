@@ -6,73 +6,17 @@ import (
 	"./utils"
 	"./violation"
 	"fmt"
-	"github.com/axgle/mahonia"
 	"github.com/gin-gonic/gin"
 	"github.com/json-iterator/go"
-	"io/ioutil"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
 )
 
-type rs struct {
-	Data []dataStru `json:"data"`
-}
-
-type dataStru struct {
-	City       string `json:"city"`
-	Pm25       string `json:"ps_pm25"`
-	Forecast6d struct {
-		Info []forecastStru `json:"info"`
-	} `json:"forecast6d"`
-	Observe observeStru `json:"observe"`
-}
-
-type forecastStru struct {
-	Date               string `json:"date"`
-	SunriseTime        string `json:"sunriseTime"`
-	SunsetTime         string `json:"sunsetTime"`
-	TemperatureDay     string `json:"temperature_day"`
-	TemperatureNight   string `json:"temperature_night"`
-	WeatherDay         string `json:"weather_day"`
-	WeatherNight       string `json:"weather_night"`
-	WindDirectionDay   string `json:"wind_direction_day"`
-	WindDirectionNight string `json:"wind_direction_night"`
-	WindPowerDay       string `json:"wind_power_day"`
-	WindPowerNight     string `json:"wind_power_night"`
-}
-
-type observeStru struct {
-	Humidity         string `json:"humidity"`
-	Temperature      string `json:"temperature"`
-	Weather          string `json:"weather"`
-	WindDirection    string `json:"wind_direction"`
-	WindDirectionNum string `json:"wind_direction_num"`
-	WindPowerNum     string `json:"wind_power_num"`
-}
-
-type cityrs struct {
-	Data []cityinfo `json:"data"`
-}
-
-type cityinfo struct {
-	K int      `json:"k"`
-	N string   `json:"n"`
-	S []string `json:"s"`
-}
-
-type rsType []string
-
 var (
 	json = jsoniter.ConfigCompatibleWithStandardLibrary
 )
-
-type sessionBody struct {
-	Session string `json:"session_key"`
-	Openid  string `json:"openid"`
-}
 
 func main() {
 	during := time.Minute * 30
@@ -88,8 +32,8 @@ func main() {
 	db := utils.OpenDb("mysql", config.MysqlUrl)
 	defer db.Close()
 
-	result := rs{}
-	cityr := cityrs{}
+	result := utils.Rs{}
+	cityr := utils.Cityrs{}
 	apis := app.Group("/weather/api")
 	apis.GET("/weather/:city", func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
@@ -112,7 +56,7 @@ func main() {
 					"from":   "cache",
 				})
 			} else {
-				rs := getJsonData(city)
+				rs := utils.GetJsonData(city)
 				b, err := json.Marshal(rs)
 				utils.ErrHandle(err)
 
@@ -158,7 +102,7 @@ func main() {
 				"data":   cityr,
 			})
 		} else {
-			matchArr := searchText(key, cityr)
+			matchArr := utils.SearchText(key, cityr)
 			c.JSON(200, gin.H{
 				"status": 0,
 				"data":   matchArr,
@@ -218,7 +162,7 @@ func main() {
 
 	apis.GET("/getopenid", func(c *gin.Context) {
 		code := c.Query("code")
-		openData := getOpenJSON(code)
+		openData := utils.GetOpenJSON(code)
 		c.JSON(200, gin.H{
 			"status": 0,
 			"data":   openData.Openid,
@@ -255,62 +199,4 @@ func main() {
 	})
 
 	app.Run(config.Port)
-}
-
-func getJsonData(city string) rs {
-	city = url.QueryEscape(city + config.Suffix)
-	wUrl := strings.Replace(config.WeatherUrl, "${city}", city, -1)
-
-	body := get(wUrl)
-	result := rs{}
-	dec := mahonia.NewDecoder("GB18030")
-	_, cdate, transErr := dec.Translate(body, true)
-
-	if transErr != nil {
-		cdate = body
-	}
-
-	json.Unmarshal(cdate, &result)
-	return result
-}
-
-func searchText(key string, data cityrs) []rsType {
-	d := data.Data
-	var rs []rsType
-	for _, v := range d {
-		var rsInfo rsType
-		n := v.N
-		s := v.S
-		if strings.Contains(n, key) {
-			rsInfo = append(rsInfo, n)
-		}
-		for _, val := range s {
-			if strings.Contains(val, key) {
-				rsInfo = append(rsInfo, n, val)
-			}
-			if len(rsInfo) > 0 {
-				rs = append(rs, rsInfo)
-				rsInfo = rsType{}
-			}
-		}
-	}
-	return rs
-}
-
-func getOpenJSON(code string) sessionBody {
-	rsUrl := strings.Replace(config.CodeUrl, "${jscode}", code, -1)
-	body := get(rsUrl)
-	s := sessionBody{}
-	json.Unmarshal(body, &s)
-	return s
-}
-
-func get(url string) []byte {
-	res, err := http.Get(url)
-	utils.ErrHandle(err)
-	body, err := ioutil.ReadAll(res.Body)
-
-	defer res.Body.Close()
-	utils.ErrHandle(err)
-	return body
 }

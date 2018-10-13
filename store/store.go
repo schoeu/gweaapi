@@ -1,8 +1,8 @@
 package store
 
 import (
-	"../config"
 	"../utils"
+	"../config"
 	"github.com/go-redis/redis"
 	"time"
 )
