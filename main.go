@@ -170,6 +170,7 @@ func main() {
 	})
 
 	apis.GET("/violation", func(c *gin.Context) {
+		uid := c.Query("uid")
 		lpn := c.Query("lpn")
 		vin := c.DefaultQuery("vin", "")
 		esn := c.DefaultQuery("esn", "")
@@ -182,6 +183,14 @@ func main() {
 		if carid != 0 {
 			violation.DeleteCars(carString)
 		}
+
+		b, err := json.Marshal(rs)
+		utils.ErrHandle(err)
+
+		jsonStr := string(b)
+
+		_, dbErr := db.Exec(`INSERT INTO services(user_id, violation, violation_info) VALUES(?, 1, ?) ON DUPLICATE KEY UPDATE violation_info=?`, uid, jsonStr, jsonStr)
+		utils.ErrHandle(dbErr)
 
 		c.JSON(200, gin.H{
 			"status": 0,

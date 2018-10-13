@@ -1,16 +1,16 @@
 package utils
 
 import (
+	"../config"
 	"database/sql"
 	"fmt"
+	"github.com/axgle/mahonia"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/json-iterator/go"
-	"github.com/axgle/mahonia"
-	"net/url"
-	"net/http"
-	"strings"
 	"io/ioutil"
-	"../config"
+	"net/http"
+	"net/url"
+	"strings"
 )
 
 type rsType []string
