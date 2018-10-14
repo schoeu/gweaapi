@@ -2,6 +2,7 @@ package main
 
 import (
 	"./config"
+	"./lunar"
 	"./store"
 	"./utils"
 	"./violation"
@@ -225,6 +226,18 @@ func main() {
 		c.JSON(200, gin.H{
 			"status": 0,
 			"data":   info,
+		})
+	})
+
+	apis.GET("/gettime", func(c *gin.Context) {
+		t := []string{
+			time.Now().Format("2006-01-02"),
+		}
+		rs := lunar.Lunar(time.Now().Format("20060102"))
+		t = append(t, rs...)
+		c.JSON(200, gin.H{
+			"status": 0,
+			"data":   t,
 		})
 	})
 
