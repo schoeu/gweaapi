@@ -93,7 +93,7 @@ func GetJsonData(city string) Rs {
 	city = url.QueryEscape(city + config.Suffix)
 	wUrl := strings.Replace(config.WeatherUrl, "${city}", city, -1)
 
-	body := get(wUrl)
+	body := Get(wUrl)
 	result := Rs{}
 	dec := mahonia.NewDecoder("GB18030")
 	_, cdate, transErr := dec.Translate(body, true)
@@ -131,13 +131,13 @@ func SearchText(key string, data Cityrs) []rsType {
 
 func GetOpenJSON(code string) sessionBody {
 	rsUrl := strings.Replace(config.CodeUrl, "${jscode}", code, -1)
-	body := get(rsUrl)
+	body := Get(rsUrl)
 	s := sessionBody{}
 	json.Unmarshal(body, &s)
 	return s
 }
 
-func get(url string) []byte {
+func Get(url string) []byte {
 	res, err := http.Get(url)
 	ErrHandle(err)
 	body, err := ioutil.ReadAll(res.Body)

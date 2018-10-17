@@ -173,24 +173,18 @@ func main() {
 	apis.GET("/violation", func(c *gin.Context) {
 		uid := c.Query("uid")
 		lpn := c.Query("lpn")
+		city := c.Query("city")
 		vin := c.DefaultQuery("vin", "")
 		esn := c.DefaultQuery("esn", "")
 
-		carid := violation.AddCars(lpn, vin, esn)
-		carString := strconv.Itoa(carid)
-		fmt.Println(carString)
-		rs := violation.GetCarsInfo(carString)
-
-		if carid != 0 {
-			violation.DeleteCars(carString)
-		}
+		rs := violation.GetVioInfo(city, lpn, vin, esn)
 
 		b, err := json.Marshal(rs)
 		utils.ErrHandle(err)
 
 		jsonStr := string(b)
 		// INSERT INTO services (user_id, violation, violation_info) VALUES ('122', '1', '{"a":1}') ON DUPLICATE KEY UPDATE violation_info= '{"a":3}
-		_, dbErr := db.Exec(`INSERT INTO services (openid, violation, vioinfo) VALUES (?, 1, ?) ON DUPLICATE KEY UPDATE vioinfo= ?`, uid, jsonStr, jsonStr)
+		_, dbErr := db.Exec(`INSERT INTO services (openid, violation, vioinfo, lpn, vin ,esn) VALUES (?, 1, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE vioinfo= ?`, uid, jsonStr, lpn, vin, esn, jsonStr)
 		utils.ErrHandle(dbErr)
 
 		c.JSON(200, gin.H{
@@ -199,34 +193,52 @@ func main() {
 		})
 	})
 
-	apis.GET("/deletecar", func(c *gin.Context) {
-		n := c.Query("n")
-		violation.DeleteCars(n)
-		c.JSON(200, gin.H{
-			"status": 0,
-			"data":   "done",
-		})
-	})
-
+	type vioRsInfo struct {
+		FineCount  int    `json:"fineCount"`
+		ItemCount  int    `json:"itemCount"`
+		Lpn        string `json:"lpn"`
+		PointCount int    `json:"pointCount"`
+	}
 	apis.GET("/vioinfo", func(c *gin.Context) {
 		uid := c.DefaultQuery("uid", "")
 		var info string
 		if uid != "" {
-			rows, err := db.Query(`select vioinfo from services where openid = ?`, uid)
+			err := db.QueryRow(`select vioinfo from services where openid = ?`, uid).Scan(&info)
 			utils.ErrHandle(err)
-			for rows.Next() {
-				err := rows.Scan(&info)
-				utils.ErrHandle(err)
+
+			vi := violation.VioInfo{}
+			err = json.Unmarshal([]byte(info), &vi)
+			utils.ErrHandle(err)
+
+			vri := vioRsInfo{}
+
+			if vi.ErrCode == 0 {
+				result := vi.Result
+				lists := result.Lists
+				vri.Lpn = result.Hphm
+				vri.ItemCount = len(lists)
+
+				for _, v := range lists {
+					money, _ := strconv.Atoi(v.Money)
+					fen, _ := strconv.Atoi(v.Fen)
+					vri.FineCount += money
+					vri.PointCount += fen
+				}
+				fmt.Println(vri)
 			}
-			err = rows.Err()
-			utils.ErrHandle(err)
-			defer rows.Close()
-			fmt.Println(info)
+
+			c.JSON(200, gin.H{
+				"status": 0,
+				"msg":    "",
+				"data":   vri,
+			})
+		} else {
+			c.JSON(200, gin.H{
+				"status": 1,
+				"msg":    "no uid.",
+				"data":   "",
+			})
 		}
-		c.JSON(200, gin.H{
-			"status": 0,
-			"data":   info,
-		})
 	})
 
 	apis.GET("/gettime", func(c *gin.Context) {
