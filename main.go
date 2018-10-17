@@ -222,6 +222,7 @@ func main() {
 					"msg":    "No data.",
 					"data":   []string{},
 				})
+				return
 			}
 
 			t, _ := time.Parse(layout, date)
