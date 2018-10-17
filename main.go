@@ -212,13 +212,8 @@ func main() {
 		uid := c.DefaultQuery("uid", "")
 
 		if uid != "" {
-			vios := store.GetData(uid)
-			if vios == nil {
-
-			}
-
-			var info, date string
-			err := db.QueryRow(`select vioinfo, update_date from services where openid = ?`, uid).Scan(&info, &date)
+			var info string
+			err := db.QueryRow(`select vioinfo, update_date from services where openid = ?`, uid).Scan(&info)
 			utils.ErrHandle(err)
 
 			vi := violation.VioInfo{}
