@@ -193,6 +193,17 @@ func main() {
 		})
 	})
 
+	apis.GET("/carpre", func(c *gin.Context) {
+		lpn := c.Query("lpn")
+
+		rs := violation.GetCarPre(lpn)
+
+		c.JSON(200, gin.H{
+			"status": 0,
+			"data":   rs,
+		})
+	})
+
 	type vioRsInfo struct {
 		FineCount  int    `json:"fineCount"`
 		ItemCount  int    `json:"itemCount"`

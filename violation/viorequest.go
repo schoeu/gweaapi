@@ -57,3 +57,36 @@ func GetVioInfo(city, lpn, vin, esn string) VioInfo {
 	fmt.Println("package violation, vi: ", vi)
 	return vi
 }
+
+type CarPre struct {
+	ErrCode int    `json:"error_code"`
+	Reason  string `json:"reason"`
+	Result  CpRs   `json:"result"`
+}
+
+type CpRs struct {
+	abbr     string `json:"abbr"`
+	CityCode string `json:"city_code"`
+	CityName string `json:"city_name"`
+	Classa   string `json:"classa"`
+	Classno  string `json:"classno"`
+	Engine   string `json:"engine"`
+	Engineno string `json:"engineno"`
+	Province string `json:"province"`
+}
+
+func GetCarPre(lpn string) CarPre {
+	u, _ := url.Parse(config.JHCarUrl)
+	q := u.Query()
+	q.Set("hphm", lpn)
+	q.Set("key", config.JHKey)
+	u.RawQuery = q.Encode()
+
+	respBytes := utils.Get(u.String())
+
+	vi := CarPre{}
+	err := json.Unmarshal(respBytes, &vi)
+	utils.ErrHandle(err)
+	fmt.Println("package violation, vi: ", vi)
+	return vi
+}
