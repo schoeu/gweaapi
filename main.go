@@ -225,9 +225,10 @@ func main() {
 				return
 			}
 
-			t, _ := time.Parse(layout, date)
-			timeNow := time.Now().UTC()
-			sub := timeNow.Sub(t.UTC())
+			// t, _ := time.Parse(layout, date)
+			t, _ := time.ParseInLocation(layout, date, time.Local)
+			timeNow := time.Now()
+			sub := timeNow.Sub(t)
 
 			fmt.Println("sub time: ", sub)
 
