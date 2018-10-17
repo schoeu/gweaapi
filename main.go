@@ -121,11 +121,9 @@ func main() {
 		}
 		if citys != "" {
 			if name != "" {
-				fmt.Println("update", username, citys)
 				_, err := db.Exec(`update weathers.cityinfo set citylist = ? where username = ?`, citys, username)
 				utils.ErrHandle(err)
 			} else {
-				fmt.Println("insert", username, citys)
 				_, err := db.Exec(`insert into cityinfo (username, citylist) values (?, ?)`, username, citys)
 				utils.ErrHandle(err)
 			}
@@ -184,7 +182,7 @@ func main() {
 
 		jsonStr := string(b)
 		// INSERT INTO services (user_id, violation, violation_info) VALUES ('122', '1', '{"a":1}') ON DUPLICATE KEY UPDATE violation_info= '{"a":3}
-		_, dbErr := db.Exec(`INSERT INTO services (openid, violation, vioinfo, lpn, vin ,esn) VALUES (?, 1, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE vioinfo= ?`, uid, jsonStr, lpn, vin, esn, jsonStr)
+		_, dbErr := db.Exec(`INSERT INTO services (openid, violation, vioinfo, lpn, vin ,esn, city) VALUES (?, 1, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE vioinfo= ?`, uid, jsonStr, lpn, vin, esn, city, jsonStr)
 		utils.ErrHandle(dbErr)
 
 		c.JSON(200, gin.H{
@@ -212,9 +210,15 @@ func main() {
 	}
 	apis.GET("/vioinfo", func(c *gin.Context) {
 		uid := c.DefaultQuery("uid", "")
-		var info string
+
 		if uid != "" {
-			err := db.QueryRow(`select vioinfo from services where openid = ?`, uid).Scan(&info)
+			vios := store.GetData(uid)
+			if vios == nil {
+
+			}
+
+			var info, date string
+			err := db.QueryRow(`select vioinfo, update_date from services where openid = ?`, uid).Scan(&info, &date)
 			utils.ErrHandle(err)
 
 			vi := violation.VioInfo{}
