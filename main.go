@@ -211,17 +211,24 @@ func main() {
 	}
 	apis.GET("/vioinfo", func(c *gin.Context) {
 		uid := c.DefaultQuery("uid", "")
-
 		if uid != "" {
 			var info, city, lpn, vin, esn, date string
 			err := db.QueryRow(`select vioinfo, city, lpn, vin, esn, update_date from services where openid = ?`, uid).Scan(&info, &city, &lpn, &vin, &esn, &date)
 			utils.ErrHandle(err)
 
+			if lpn == "" {
+				c.JSON(200, gin.H{
+					"status": 0,
+					"msg":    "No data.",
+					"data":   []string{},
+				})
+			}
+
 			t, _ := time.Parse(layout, date)
 			timeNow := time.Now().UTC()
 			sub := timeNow.Sub(t.UTC())
 
-			fmt.Println("SubTime", timeNow, t.UTC(), sub, config.SubTime*time.Hour > sub)
+			fmt.Println("sub time: ", sub)
 
 			vi := violation.VioInfo{}
 			if config.SubTime*time.Hour < sub && city != "" && lpn != "" {
