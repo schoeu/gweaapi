@@ -16,7 +16,8 @@ import (
 )
 
 var (
-	json = jsoniter.ConfigCompatibleWithStandardLibrary
+	json   = jsoniter.ConfigCompatibleWithStandardLibrary
+	layout = "2006-01-02 15:04:05"
 )
 
 func main() {
@@ -212,13 +213,31 @@ func main() {
 		uid := c.DefaultQuery("uid", "")
 
 		if uid != "" {
-			var info string
-			err := db.QueryRow(`select vioinfo, update_date from services where openid = ?`, uid).Scan(&info)
+			var info, city, lpn, vin, esn, date string
+			err := db.QueryRow(`select vioinfo, city, lpn, vin, esn, update_date from services where openid = ?`, uid).Scan(&info, &city, &lpn, &vin, &esn, &date)
 			utils.ErrHandle(err)
 
+			t, _ := time.Parse(layout, date)
+			timeNow := time.Now().UTC()
+			sub := timeNow.Sub(t.UTC())
+
+			fmt.Println("SubTime", timeNow, t.UTC(), sub, config.SubTime*time.Hour > sub)
+
 			vi := violation.VioInfo{}
-			err = json.Unmarshal([]byte(info), &vi)
-			utils.ErrHandle(err)
+			if config.SubTime*time.Hour < sub && city != "" && lpn != "" {
+				fmt.Println("new request.", city, lpn, vin, esn)
+				vi = violation.GetVioInfo(city, lpn, vin, esn)
+				b, err := json.Marshal(vi)
+				utils.ErrHandle(err)
+
+				jsonStr := string(b)
+				_, dbErr := db.Exec(`update services set vioinfo = ?, update_date  = ? where openid = ?`, jsonStr, timeNow.Format(layout), uid)
+				utils.ErrHandle(dbErr)
+			} else {
+				err = json.Unmarshal([]byte(info), &vi)
+				utils.ErrHandle(err)
+				fmt.Println("cache.")
+			}
 
 			vri := vioRsInfo{}
 
@@ -236,7 +255,6 @@ func main() {
 				}
 				fmt.Println(vri)
 			}
-
 			c.JSON(200, gin.H{
 				"status": 0,
 				"msg":    "",
