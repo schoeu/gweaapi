@@ -1,16 +1,18 @@
 package utils
 
 import (
-	"../config"
 	"database/sql"
+	"encoding/json"
 	"fmt"
-	"github.com/axgle/mahonia"
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/json-iterator/go"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"../config"
+	"github.com/axgle/mahonia"
+	"github.com/gin-gonic/gin"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type rsType []string
@@ -65,10 +67,6 @@ type observeStru struct {
 	WindDirectionNum string `json:"wind_direction_num"`
 	WindPowerNum     string `json:"wind_power_num"`
 }
-
-var (
-	json = jsoniter.ConfigCompatibleWithStandardLibrary
-)
 
 func ErrHandle(err error) {
 	if err != nil {
@@ -145,4 +143,21 @@ func Get(url string) []byte {
 	defer res.Body.Close()
 	ErrHandle(err)
 	return body
+}
+
+// 错误json信息统一处理
+func ReturnError(c *gin.Context, msg string) {
+	c.JSON(http.StatusOK, gin.H{
+		"status": "1",
+		"msg":    msg,
+		"data":   nil,
+	})
+}
+
+func ReturnJSON(c *gin.Context, data interface{}) {
+	c.JSON(http.StatusOK, gin.H{
+		"status": "0",
+		"msg":    "ok",
+		"data":   data,
+	})
 }

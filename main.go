@@ -1,22 +1,22 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+
 	"./config"
 	"./lunar"
 	"./store"
 	"./utils"
 	"./violation"
-	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/json-iterator/go"
-	"net/http"
-	"strconv"
-	"strings"
-	"time"
 )
 
 var (
-	json   = jsoniter.ConfigCompatibleWithStandardLibrary
 	layout = "2006-01-02 15:04:05"
 )
 
@@ -80,10 +80,7 @@ func main() {
 			utils.ErrHandle(err)
 		}
 
-		c.JSON(200, gin.H{
-			"status": 0,
-			"data":   "ok",
-		})
+		utils.ReturnJSON(c, "ok")
 	})
 
 	apis.GET("/search", func(c *gin.Context) {
@@ -99,16 +96,10 @@ func main() {
 		utils.ErrHandle(err)
 
 		if key == "" {
-			c.JSON(200, gin.H{
-				"status": 0,
-				"data":   cityr,
-			})
+			utils.ReturnJSON(c, cityr)
 		} else {
 			matchArr := utils.SearchText(key, cityr)
-			c.JSON(200, gin.H{
-				"status": 0,
-				"data":   matchArr,
-			})
+			utils.ReturnJSON(c, matchArr)
 		}
 	})
 
@@ -129,10 +120,7 @@ func main() {
 				utils.ErrHandle(err)
 			}
 		}
-		c.JSON(200, gin.H{
-			"status": 0,
-			"data":   "ok",
-		})
+		utils.ReturnJSON(c, "ok")
 	})
 
 	apis.GET("/getcity", func(c *gin.Context) {
@@ -148,25 +136,43 @@ func main() {
 			err = rows.Err()
 			utils.ErrHandle(err)
 			defer rows.Close()
-			c.JSON(200, gin.H{
-				"status": 0,
-				"data":   strings.Split(citys, ","),
-			})
+			utils.ReturnJSON(c, strings.Split(citys, ","))
 		} else {
-			c.JSON(200, gin.H{
-				"status": 1,
-				"data":   "no data.",
-			})
+			utils.ReturnError(c, "no data.")
 		}
+	})
+
+	type Shares [][]string
+	apis.GET("/getshares", func(c *gin.Context) {
+		var content, times string
+		var spit []string
+		tp := "1"
+		rows, err := db.Query(`select content, times from shares order by times asc`)
+		utils.ErrHandle(err)
+		sr := Shares{}
+		for rows.Next() {
+			err := rows.Scan(&content, &times)
+			utils.ErrHandle(err)
+			if times != tp {
+				sr = append(sr, spit)
+				spit = []string{}
+			}
+			spit = append(spit, content)
+			tp = times
+		}
+		if spit != nil {
+			sr = append(sr, spit)
+		}
+		err = rows.Err()
+		utils.ErrHandle(err)
+		defer rows.Close()
+		utils.ReturnJSON(c, sr)
 	})
 
 	apis.GET("/getopenid", func(c *gin.Context) {
 		code := c.Query("code")
 		openData := utils.GetOpenJSON(code)
-		c.JSON(200, gin.H{
-			"status": 0,
-			"data":   openData.Openid,
-		})
+		utils.ReturnJSON(c, openData.Openid)
 	})
 
 	apis.GET("/violation", func(c *gin.Context) {
@@ -185,29 +191,23 @@ func main() {
 		// INSERT INTO services (user_id, violation, violation_info) VALUES ('122', '1', '{"a":1}') ON DUPLICATE KEY UPDATE violation_info= '{"a":3}
 		_, dbErr := db.Exec(`INSERT INTO services (openid, violation, vioinfo, lpn, vin ,esn, city) VALUES (?, 1, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE vioinfo= ?`, uid, jsonStr, lpn, vin, esn, city, jsonStr)
 		utils.ErrHandle(dbErr)
-
-		c.JSON(200, gin.H{
-			"status": 0,
-			"data":   rs,
-		})
+		utils.ReturnJSON(c, rs)
 	})
 
 	apis.GET("/carpre", func(c *gin.Context) {
 		lpn := c.Query("lpn")
 
 		rs := violation.GetCarPre(lpn)
-
-		c.JSON(200, gin.H{
-			"status": 0,
-			"data":   rs,
-		})
+		utils.ReturnJSON(c, rs)
 	})
 
+	type vioDetail []violation.VioList
 	type vioRsInfo struct {
-		FineCount  int    `json:"fineCount"`
-		ItemCount  int    `json:"itemCount"`
-		Lpn        string `json:"lpn"`
-		PointCount int    `json:"pointCount"`
+		FineCount  int       `json:"fineCount"`
+		ItemCount  int       `json:"itemCount"`
+		Lpn        string    `json:"lpn"`
+		PointCount int       `json:"pointCount"`
+		Detail     vioDetail `json:"detail"`
 	}
 	apis.GET("/vioinfo", func(c *gin.Context) {
 		uid := c.DefaultQuery("uid", "")
@@ -217,11 +217,7 @@ func main() {
 			utils.ErrHandle(err)
 
 			if lpn == "" {
-				c.JSON(200, gin.H{
-					"status": 0,
-					"msg":    "No data.",
-					"data":   []string{},
-				})
+				utils.ReturnError(c, "no data.")
 				return
 			}
 
@@ -255,6 +251,7 @@ func main() {
 				lists := result.Lists
 				vri.Lpn = result.Hphm
 				vri.ItemCount = len(lists)
+				vri.Detail = vi.Result.Lists
 
 				for _, v := range lists {
 					money, _ := strconv.Atoi(v.Money)
@@ -264,17 +261,9 @@ func main() {
 				}
 				fmt.Println(vri)
 			}
-			c.JSON(200, gin.H{
-				"status": 0,
-				"msg":    "",
-				"data":   vri,
-			})
+			utils.ReturnJSON(c, vri)
 		} else {
-			c.JSON(200, gin.H{
-				"status": 1,
-				"msg":    "no uid.",
-				"data":   "",
-			})
+			utils.ReturnError(c, "no uid.")
 		}
 	})
 
@@ -284,10 +273,7 @@ func main() {
 		}
 		rs := lunar.Lunar(time.Now().Format("20060102"))
 		t = append(t, rs...)
-		c.JSON(200, gin.H{
-			"status": 0,
-			"data":   t,
-		})
+		utils.ReturnJSON(c, t)
 	})
 
 	app.Run(config.Port)
