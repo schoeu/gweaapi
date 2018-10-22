@@ -86,13 +86,9 @@ func main() {
 	apis.GET("/search", func(c *gin.Context) {
 		key := c.Query("key")
 
-		citys := store.GetData("citylist")
-		if citys == "" {
-			citys = config.CityMap
-			store.SetData("citylist", citys, 0)
-		}
+		citys := config.CityMap
 
-		err := json.Unmarshal([]byte(citys.(string)), &cityr)
+		err := json.Unmarshal([]byte(citys), &cityr)
 		utils.ErrHandle(err)
 
 		if key == "" {
